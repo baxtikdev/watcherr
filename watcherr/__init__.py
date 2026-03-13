@@ -1,5 +1,5 @@
 from watcherr.config import WatcherrConfig, configure
-from watcherr.sender import send_alert, send_info, send_warning
+from watcherr.sender import send_alert, send_info, send_photo, send_warning
 
 __all__ = [
     "WatcherrConfig",
@@ -7,4 +7,5 @@ __all__ = [
     "send_alert",
     "send_warning",
     "send_info",
+    "send_photo",
 ]

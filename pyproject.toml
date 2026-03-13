@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "watcherr"
-version = "0.1.2"
-description = "Lightweight error alerting via Telegram for Python apps. Integrates with FastAPI, Django, and Celery with rate limiting and retry support."
+version = "0.2.0"
+description = "Lightweight error alerting via Telegram for Python apps. Integrates with FastAPI, Django, Flask, Sanic, Litestar, aiohttp, Celery, Dramatiq, RQ, Huey, APScheduler, and Playwright."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-keywords = ["error", "alerting", "telegram", "monitoring"]
+keywords = ["error", "alerting", "telegram", "monitoring", "watchdog"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -25,9 +25,20 @@ dependencies = [
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100"]
 django = ["django>=3.2"]
+flask = ["flask>=2.0"]
+sanic = ["sanic>=22.0"]
+litestar = ["litestar>=2.0"]
+aiohttp = ["aiohttp>=3.8"]
 celery = ["celery>=5.0"]
+dramatiq = ["dramatiq>=1.13"]
+rq = ["rq>=1.10"]
+huey = ["huey>=2.4"]
+apscheduler = ["apscheduler>=3.9"]
+playwright = ["playwright>=1.30"]
 bot = ["aiogram>=3.0"]
-all = ["watcherr[fastapi,django,celery,bot]"]
+all = [
+    "watcherr[fastapi,django,flask,sanic,litestar,aiohttp,celery,dramatiq,rq,huey,apscheduler,playwright,bot]",
+]
 dev = [
     "watcherr[all]",
     "pytest>=7.0",
