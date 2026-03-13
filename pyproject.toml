@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "watcherr"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lightweight error alerting via Telegram"
 readme = "README.md"
 license = "MIT"
@@ -24,9 +24,10 @@ dependencies = [
 
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100"]
+django = ["django>=3.2"]
 celery = ["celery>=5.0"]
 bot = ["aiogram>=3.0"]
-all = ["watcherr[fastapi,celery,bot]"]
+all = ["watcherr[fastapi,django,celery,bot]"]
 dev = [
     "watcherr[all]",
     "pytest>=7.0",

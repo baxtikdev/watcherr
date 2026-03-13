@@ -12,6 +12,7 @@ Optional integrations:
 
 ```bash
 pip install watcherr[fastapi]
+pip install watcherr[django]
 pip install watcherr[celery]
 pip install watcherr[all]
 ```
@@ -74,6 +75,16 @@ logging.getLogger("myapp").addHandler(WatcherrHandler())
 from watcherr.integrations.fastapi_middleware import WatcherrMiddleware
 
 app.add_middleware(WatcherrMiddleware)
+```
+
+### Django middleware
+
+```python
+# settings.py
+MIDDLEWARE = [
+    "watcherr.integrations.django_middleware.WatcherrMiddleware",
+    # ... other middleware
+]
 ```
 
 ### Celery signals
