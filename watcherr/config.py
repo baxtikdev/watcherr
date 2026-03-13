@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+import threading
 from dataclasses import dataclass
 
+_lock = threading.Lock()
 _config: WatcherrConfig | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class WatcherrConfig:
     bot_token: str = ""
     chat_id: str = ""
@@ -26,7 +28,7 @@ def configure(
 ) -> WatcherrConfig:
     global _config
 
-    _config = WatcherrConfig(
+    config = WatcherrConfig(
         bot_token=bot_token or os.getenv("WATCHERR_BOT_TOKEN", ""),
         chat_id=chat_id or os.getenv("WATCHERR_CHAT_ID", ""),
         service_name=service_name or os.getenv("WATCHERR_SERVICE_NAME", "app"),
@@ -36,11 +38,16 @@ def configure(
         ),
         enabled=enabled if enabled is not None else os.getenv("WATCHERR_ENABLED", "true").lower() == "true",
     )
-    return _config
+
+    with _lock:
+        _config = config
+
+    return config
 
 
 def get_config() -> WatcherrConfig:
     global _config
-    if _config is None:
-        _config = configure()
-    return _config
+    with _lock:
+        if _config is None:
+            _config = configure()
+        return _config

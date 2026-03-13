@@ -9,6 +9,9 @@ LEVEL_EMOJI = {
     "info": "\U0001f535",
 }
 
+_MAX_TB_LINES = 50
+_MAX_TB_CHARS = 2000
+
 
 def format_message(
     level: str,
@@ -25,9 +28,7 @@ def format_message(
     parts = [title, "", message]
 
     if exc:
-        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        if len(tb) > 2000:
-            tb = tb[:2000] + "\n... (truncated)"
+        tb = _truncate_traceback(exc)
         parts.append(f"\n<pre>{_escape_html(tb)}</pre>")
 
     if extra:
@@ -37,6 +38,22 @@ def format_message(
     parts.append(f"\n<i>{now}</i>")
 
     return "\n".join(parts)
+
+
+def _truncate_traceback(exc: BaseException) -> str:
+    lines = traceback.format_exception(type(exc), exc, exc.__traceback__)
+    tb_lines = "".join(lines).splitlines()
+
+    if len(tb_lines) > _MAX_TB_LINES:
+        tb_lines = tb_lines[:_MAX_TB_LINES]
+        tb_lines.append(f"... ({len(tb_lines)} lines truncated)")
+
+    result = "\n".join(tb_lines)
+    if len(result) > _MAX_TB_CHARS:
+        result = result[:_MAX_TB_CHARS].rsplit("\n", 1)[0]
+        result += "\n... (truncated)"
+
+    return result
 
 
 def _escape_html(text: str) -> str:

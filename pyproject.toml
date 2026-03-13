@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "watcherr"
-version = "0.1.1"
-description = "Lightweight error alerting via Telegram"
+version = "0.1.2"
+description = "Lightweight error alerting via Telegram for Python apps. Integrates with FastAPI, Django, and Celery with rate limiting and retry support."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
