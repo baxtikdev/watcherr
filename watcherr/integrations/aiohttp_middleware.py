@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+try:
+    from aiohttp.web import HTTPException, middleware  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[aiohttp]: pip install watcherr[aiohttp]") from None
+
 from watcherr.sender import send_alert
 
 
@@ -12,7 +17,6 @@ def watcherr_middleware():
 
         app = web.Application(middlewares=[watcherr_middleware()])
     """
-    from aiohttp.web import HTTPException, middleware
 
     @middleware
     async def _middleware(request, handler):

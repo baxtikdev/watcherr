@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+try:
+    from litestar import Request, Response  # noqa: F401
+    from litestar.exceptions import HTTPException  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[litestar]: pip install watcherr[litestar]") from None
+
 from watcherr.sender import send_alert
 
 
@@ -14,8 +20,6 @@ def create_exception_handler():
             exception_handlers={Exception: create_exception_handler()},
         )
     """
-    from litestar import Request, Response
-    from litestar.exceptions import HTTPException
 
     async def _handler(request: Request, exc: Exception) -> Response:
         if isinstance(exc, HTTPException):

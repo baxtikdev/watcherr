@@ -3,6 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+try:
+    import playwright  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[playwright]: pip install watcherr[playwright]") from None
+
 from watcherr.sender import send_alert, send_photo
 
 if TYPE_CHECKING:

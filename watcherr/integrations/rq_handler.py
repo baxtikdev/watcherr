@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+try:
+    import rq  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[rq]: pip install watcherr[rq]") from None
+
 from watcherr.sender import send_alert
 
 

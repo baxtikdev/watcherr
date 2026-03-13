@@ -1,6 +1,14 @@
-from unittest.mock import MagicMock, PropertyMock, patch
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from watcherr import configure
+
+# Mock playwright module for tests
+if "playwright" not in sys.modules:
+    sys.modules["playwright"] = MagicMock()
+
 from watcherr.integrations.playwright import AsyncWatcherrPlaywright, WatcherrPlaywright
 
 

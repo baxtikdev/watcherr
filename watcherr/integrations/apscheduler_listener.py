@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+try:
+    import apscheduler  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[apscheduler]: pip install watcherr[apscheduler]") from None
+
 from watcherr.sender import send_alert
 
 

@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+try:
+    import huey  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[huey]: pip install watcherr[huey]") from None
+
 from watcherr.sender import send_alert, send_warning
 
 

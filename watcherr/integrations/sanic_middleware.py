@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+try:
+    from sanic.exceptions import SanicException  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[sanic]: pip install watcherr[sanic]") from None
+
 from watcherr.sender import send_alert
 
 
@@ -10,7 +15,6 @@ def init_app(app) -> None:
         from watcherr.integrations.sanic_middleware import init_app
         init_app(app)
     """
-    from sanic.exceptions import SanicException
 
     @app.exception(Exception)
     async def _handle_exception(request, exc):

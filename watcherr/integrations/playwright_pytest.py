@@ -14,6 +14,11 @@ from __future__ import annotations
 
 import logging
 
+try:
+    import playwright  # noqa: F401
+except ImportError:
+    raise ImportError("Install watcherr[playwright]: pip install watcherr[playwright]") from None
+
 import pytest
 
 from watcherr.sender import send_alert, send_photo

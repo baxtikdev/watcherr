@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 
 flask = pytest.importorskip("flask")
+werkzeug = pytest.importorskip("werkzeug")
 from flask import Flask
 
 from watcherr import configure
