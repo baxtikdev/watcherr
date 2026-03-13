@@ -6,7 +6,7 @@ import logging
 import threading
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 
@@ -29,11 +29,10 @@ def _build_url(config: WatcherrConfig, method: str) -> str:
     return TELEGRAM_API.format(token=config.bot_token, method=method)
 
 
-def _send_message_sync(text: str, config: WatcherrConfig) -> bool:
-    url = _build_url(config, "sendMessage")
+def _retry_sync(fn: Callable[[], httpx.Response]) -> bool:
     for attempt in range(_MAX_RETRIES + 1):
         try:
-            resp = httpx.post(url, json={"chat_id": config.chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+            resp = fn()
             if resp.is_success:
                 return True
             logger.warning("watcherr: telegram %s: %s", resp.status_code, resp.text[:200])
@@ -46,19 +45,15 @@ def _send_message_sync(text: str, config: WatcherrConfig) -> bool:
     return False
 
 
-async def _send_message_async(text: str, config: WatcherrConfig) -> bool:
-    url = _build_url(config, "sendMessage")
+async def _retry_async(fn: Callable[[], Any]) -> bool:
     for attempt in range(_MAX_RETRIES + 1):
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(
-                    url, json={"chat_id": config.chat_id, "text": text, "parse_mode": "HTML"}, timeout=10
-                )
-                if resp.is_success:
-                    return True
-                logger.warning("watcherr: telegram %s: %s", resp.status_code, resp.text[:200])
-                if resp.status_code < 500:
-                    return False
+            resp = await fn()
+            if resp.is_success:
+                return True
+            logger.warning("watcherr: telegram %s: %s", resp.status_code, resp.text[:200])
+            if resp.status_code < 500:
+                return False
         except Exception:
             logger.debug("watcherr: send failed (attempt %d)", attempt + 1, exc_info=True)
         if attempt < _MAX_RETRIES:
@@ -66,52 +61,56 @@ async def _send_message_async(text: str, config: WatcherrConfig) -> bool:
     return False
 
 
+def _send_message_sync(text: str, config: WatcherrConfig) -> bool:
+    url = _build_url(config, "sendMessage")
+    return _retry_sync(
+        lambda: httpx.post(url, json={"chat_id": config.chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+    )
+
+
+async def _send_message_async(text: str, config: WatcherrConfig) -> bool:
+    url = _build_url(config, "sendMessage")
+
+    async def _call():
+        async with httpx.AsyncClient() as client:
+            return await client.post(
+                url, json={"chat_id": config.chat_id, "text": text, "parse_mode": "HTML"}, timeout=10
+            )
+
+    return await _retry_async(_call)
+
+
 def _send_photo_sync(photo: bytes, caption: str, filename: str, config: WatcherrConfig) -> bool:
     url = _build_url(config, "sendPhoto")
-    for attempt in range(_MAX_RETRIES + 1):
-        try:
-            resp = httpx.post(
+    return _retry_sync(
+        lambda: httpx.post(
+            url,
+            data={"chat_id": config.chat_id, "caption": caption[:1024], "parse_mode": "HTML"},
+            files={"photo": (filename, photo, "image/png")},
+            timeout=30,
+        )
+    )
+
+
+async def _send_photo_async(photo: bytes, caption: str, filename: str, config: WatcherrConfig) -> bool:
+    url = _build_url(config, "sendPhoto")
+
+    async def _call():
+        async with httpx.AsyncClient() as client:
+            return await client.post(
                 url,
                 data={"chat_id": config.chat_id, "caption": caption[:1024], "parse_mode": "HTML"},
                 files={"photo": (filename, photo, "image/png")},
                 timeout=30,
             )
-            if resp.is_success:
-                return True
-            logger.warning("watcherr: telegram photo %s: %s", resp.status_code, resp.text[:200])
-            if resp.status_code < 500:
-                return False
-        except Exception:
-            logger.debug("watcherr: photo send failed (attempt %d)", attempt + 1, exc_info=True)
-        if attempt < _MAX_RETRIES:
-            time.sleep(_RETRY_DELAY * (attempt + 1))
-    return False
+
+    return await _retry_async(_call)
 
 
-async def _send_photo_async(photo: bytes, caption: str, filename: str, config: WatcherrConfig) -> bool:
-    url = _build_url(config, "sendPhoto")
-    for attempt in range(_MAX_RETRIES + 1):
-        try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(
-                    url,
-                    data={"chat_id": config.chat_id, "caption": caption[:1024], "parse_mode": "HTML"},
-                    files={"photo": (filename, photo, "image/png")},
-                    timeout=30,
-                )
-                if resp.is_success:
-                    return True
-                logger.warning("watcherr: telegram photo %s: %s", resp.status_code, resp.text[:200])
-                if resp.status_code < 500:
-                    return False
-        except Exception:
-            logger.debug("watcherr: photo send failed (attempt %d)", attempt + 1, exc_info=True)
-        if attempt < _MAX_RETRIES:
-            await asyncio.sleep(_RETRY_DELAY * (attempt + 1))
-    return False
+# --- dispatch ---
 
 
-def _tracked_call(fn, *args) -> None:
+def _tracked_call(fn: Callable, *args: Any) -> None:
     try:
         fn(*args)
     finally:
@@ -123,38 +122,29 @@ def _tracked_call(fn, *args) -> None:
                 pass
 
 
-def _dispatch(text: str) -> None:
-    config = get_config()
+def _dispatch_any(sync_fn: Callable, async_fn: Callable, *args: Any) -> None:
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = None
 
     if loop and loop.is_running():
-        loop.create_task(_send_message_async(text, config))
+        loop.create_task(async_fn(*args))
     else:
-        t = threading.Thread(target=_tracked_call, args=(_send_message_sync, text, config), daemon=True)
+        t = threading.Thread(target=_tracked_call, args=(sync_fn, *args), daemon=True)
         with _pending_lock:
             _pending_threads.append(t)
         t.start()
+
+
+def _dispatch(text: str) -> None:
+    config = get_config()
+    _dispatch_any(_send_message_sync, _send_message_async, text, config)
 
 
 def _dispatch_photo(photo: bytes, caption: str, filename: str) -> None:
     config = get_config()
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
-
-    if loop and loop.is_running():
-        loop.create_task(_send_photo_async(photo, caption, filename, config))
-    else:
-        t = threading.Thread(
-            target=_tracked_call, args=(_send_photo_sync, photo, caption, filename, config), daemon=True
-        )
-        with _pending_lock:
-            _pending_threads.append(t)
-        t.start()
+    _dispatch_any(_send_photo_sync, _send_photo_async, photo, caption, filename, config)
 
 
 def _flush_pending(timeout: float = 5.0) -> None:
@@ -169,6 +159,9 @@ def _flush_pending(timeout: float = 5.0) -> None:
 
 
 atexit.register(_flush_pending)
+
+
+# --- public API ---
 
 
 def _send(level: str, message: str, exc: BaseException | None = None, extra: dict | None = None) -> None:
