@@ -22,6 +22,7 @@ async def test_successful_request_no_alert(mock_send):
     _setup()
     app = WatcherrASGIMiddleware(_ok_app)
     scope = {"type": "http", "method": "GET", "path": "/ok", "client": ("127.0.0.1", 8000)}
+
     async def noop(msg):
         pass
 

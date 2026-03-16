@@ -13,6 +13,23 @@ _MAX_TB_LINES = 50
 _MAX_TB_CHARS = 2000
 
 
+def _detect_language(text: str) -> str:
+    if "Traceback (most recent call last)" in text or 'File "' in text:
+        return "python"
+    if "\tat " in text and ("Exception" in text or "Error" in text):
+        return "java"
+    if "at Object." in text or "at Module." in text or "at node:" in text:
+        return "javascript"
+    if "goroutine " in text or "panic:" in text:
+        return "go"
+    if "RuntimeError" in text or "NoMethodError" in text or ".rb:" in text:
+        return "ruby"
+    stripped = text.strip()
+    if stripped.startswith(("{", "[")):
+        return "json"
+    return "python"
+
+
 def format_message(
     level: str,
     message: str,
@@ -29,7 +46,8 @@ def format_message(
 
     if exc:
         tb = _truncate_traceback(exc)
-        parts.append(f"\n<pre>{_escape_html(tb)}</pre>")
+        lang = _detect_language(tb)
+        parts.append(f'\n<pre><code class="language-{lang}">{_escape_html(tb)}</code></pre>')
 
     if extra:
         lines = [f"  <b>{k}</b>: {_escape_html(str(v))}" for k, v in extra.items()]

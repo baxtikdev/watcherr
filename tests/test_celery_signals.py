@@ -53,9 +53,9 @@ def test_unknown_sender_handled(mock_send):
 
 
 def test_setup_connects_signals():
-    from celery.signals import task_failure, task_retry
+    from celery.signals import task_failure
 
-    from watcherr.integrations.celery_signals import _on_task_failure, _on_task_retry, setup_celery_alerts
+    from watcherr.integrations.celery_signals import _on_task_failure, setup_celery_alerts
 
     setup_celery_alerts()
 

@@ -57,6 +57,6 @@ async def test_http_exception_no_alert(mock_send):
     request = _make_request()
     exc = HTTPException(status_code=404, detail="Not found")
 
-    result = await handler(request, exc)
+    await handler(request, exc)
 
     mock_send.assert_not_called()

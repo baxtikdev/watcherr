@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0] - 2026-03-16
+
+### Added
+- Copyable code blocks in Telegram alerts (`<pre><code class="language-...">`) with syntax highlighting
+- Auto language detection for tracebacks: Python, Java, JavaScript, Go, Ruby, JSON
+
+### Fixed
+- 4xx HTTP errors no longer trigger alerts in FastAPI, ASGI, and WSGI middlewares (only 5xx)
+
 ## [0.2.0] - 2026-03-13
 
 ### Added

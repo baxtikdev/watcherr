@@ -4,6 +4,7 @@ from watcherr.sender import send_alert
 
 
 def WatcherrMiddleware(app):
+    from starlette.exceptions import HTTPException
     from starlette.middleware.base import BaseHTTPMiddleware
     from starlette.requests import Request
     from starlette.responses import Response
@@ -13,6 +14,9 @@ def WatcherrMiddleware(app):
             try:
                 return await call_next(request)
             except Exception as exc:
+                if isinstance(exc, HTTPException) and exc.status_code < 500:
+                    raise
+
                 send_alert(
                     f"Unhandled exception in {request.method} {request.url.path}",
                     exc=exc,

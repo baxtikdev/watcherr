@@ -19,6 +19,10 @@ class WatcherrWSGIMiddleware:
         try:
             return self.app(environ, start_response)
         except Exception as exc:
+            status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+            if isinstance(status, int) and 400 <= status < 500:
+                raise
+
             method = environ.get("REQUEST_METHOD", "UNKNOWN")
             path = environ.get("PATH_INFO", "/")
             client = environ.get("REMOTE_ADDR", "unknown")

@@ -4,10 +4,10 @@ import pytest
 
 flask = pytest.importorskip("flask")
 werkzeug = pytest.importorskip("werkzeug")
-from flask import Flask
+from flask import Flask  # noqa: E402
 
-from watcherr import configure
-from watcherr.integrations.flask import init_app
+from watcherr import configure  # noqa: E402
+from watcherr.integrations.flask import init_app  # noqa: E402
 
 
 def _setup():

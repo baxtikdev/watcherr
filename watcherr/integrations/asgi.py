@@ -23,6 +23,10 @@ class WatcherrASGIMiddleware:
         try:
             await self.app(scope, receive, send)
         except Exception as exc:
+            status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+            if isinstance(status, int) and 400 <= status < 500:
+                raise
+
             method = scope.get("method", "UNKNOWN")
             path = scope.get("path", "/")
             client = scope.get("client")

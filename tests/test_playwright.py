@@ -1,8 +1,6 @@
 import sys
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from watcherr import configure
 
 # Mock playwright module for tests
