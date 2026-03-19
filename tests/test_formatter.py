@@ -1,4 +1,4 @@
-from watcherr.formatter import _detect_language, _escape_html, format_message
+from watcherr.formatter import _detect_language, _escape_html, _extract_json, format_message
 
 
 def test_format_error_message():
@@ -74,3 +74,41 @@ def test_detect_language_json():
 
 def test_detect_language_default():
     assert _detect_language("some unknown error text") == "python"
+
+
+def test_extract_json_from_message():
+    msg = (
+        "POST failed - GUID: abc-123, Status: 400, Response: "
+        '{"status":"fail","data":{"message":"Price cannot be empty"}}'
+    )
+    text, json_part = _extract_json(msg)
+    assert text == "POST failed - GUID: abc-123, Status: 400, Response:"
+    assert json_part is not None
+    assert '"status": "fail"' in json_part
+    assert '"Price cannot be empty"' in json_part
+
+
+def test_extract_json_no_json():
+    msg = "Simple error message without JSON"
+    text, json_part = _extract_json(msg)
+    assert text == msg
+    assert json_part is None
+
+
+def test_extract_json_array():
+    msg = 'Errors: [{"code": "invalid", "field": "email"}]'
+    text, json_part = _extract_json(msg)
+    assert text == "Errors:"
+    assert json_part is not None
+    assert '"code": "invalid"' in json_part
+
+
+def test_format_message_with_json_in_message():
+    result = format_message(
+        level="error",
+        message='API failed, Response: {"error": "not_found"}',
+        service_name="api",
+        environment="prod",
+    )
+    assert 'class="language-json"' in result
+    assert "API failed, Response:" in result

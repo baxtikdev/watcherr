@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.1] - 2026-03-19
+
+### Added
+- Auto-extract JSON from message body into copyable `language-json` code block
+
 ## [0.3.0] - 2026-03-16
 
 ### Added

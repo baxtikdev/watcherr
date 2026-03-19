@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import traceback
 from datetime import datetime, timezone
 
@@ -30,6 +31,24 @@ def _detect_language(text: str) -> str:
     return "python"
 
 
+def _extract_json(message: str) -> tuple[str, str | None]:
+    decoder = json.JSONDecoder()
+    for i, ch in enumerate(message):
+        if ch in ("{", "["):
+            try:
+                parsed, end = decoder.raw_decode(message, i)
+                formatted = json.dumps(parsed, indent=2, ensure_ascii=False)
+                prefix = message[:i].rstrip(", ").rstrip()
+                suffix = message[i + end :].strip()
+                text = prefix
+                if suffix:
+                    text = f"{text} {suffix}" if text else suffix
+                return text, formatted
+            except (json.JSONDecodeError, ValueError):
+                continue
+    return message, None
+
+
 def format_message(
     level: str,
     message: str,
@@ -42,7 +61,11 @@ def format_message(
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     title = f"{emoji} <b>{level.upper()}</b> | <b>{service_name}</b> [{environment}]"
 
-    parts = [title, "", message]
+    text_part, json_part = _extract_json(message)
+    parts = [title, "", text_part]
+
+    if json_part:
+        parts.append(f'\n<pre><code class="language-json">{_escape_html(json_part)}</code></pre>')
 
     if exc:
         tb = _truncate_traceback(exc)
